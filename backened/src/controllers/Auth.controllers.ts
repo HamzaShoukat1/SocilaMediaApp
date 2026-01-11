@@ -5,9 +5,10 @@ import { User } from "../models/User.model.js";
 import jwt from "jsonwebtoken"
 import { FoodPartner } from "../models/FoodPartner.model.js";
 import { generateAccessToken,generateRefreshToken } from "../services/Token.services.js";
-
+import {type  IBaseAuthDoc } from "../Types/types.js";
+import { type Model } from "mongoose";
 const generateAcessandRefreshTokens = async (userId: string,role: "USER" | "FOOD_PARTNER") => {
-    const Model = role === "USER" ? User : FoodPartner
+    const Model:Model<IBaseAuthDoc> = role === "USER" ? User : FoodPartner
     try {
         const user = await Model.findById(userId)
         if (!user) {
@@ -189,9 +190,9 @@ const registerFoodPartner = asynchandler(async (req, res) => {
     //remove password and refreshtoken from res
     //check for user creation
     //return res 
-    const { email, fullName, password } = req.body
+    const { email, name,phone,address, password } = req.body
     if (
-        [fullName, email, password].some((fields) => fields?.trim() === "")
+        [name, email,phone,address, password].some((fields) => fields?.trim() === "")
     ) {
         throw new Apierror(400, "all fields are required")
 
@@ -207,9 +208,11 @@ const registerFoodPartner = asynchandler(async (req, res) => {
   
     //createUser obj entry in db
     const user = await FoodPartner.create({
-        fullName: fullName,
+        name,
         email,
         password,
+        phone,
+        address
 
 
 
@@ -295,7 +298,7 @@ const refreshAccessTokens = asynchandler(async (req, res) => {
             process.env.REFRESH_TOKEN_SECRET || ''
         ) as {_id:string; role:"USER" | "FOOD_PARTNER"}
         //find user who have token
-        const Model = decodedToken.role === "USER" ? User : FoodPartner
+        const Model:Model<IBaseAuthDoc> = decodedToken.role === "USER" ? User : FoodPartner
         const user = await Model.findById(decodedToken?._id)
 
         if (!user) {

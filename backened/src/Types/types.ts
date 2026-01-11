@@ -18,9 +18,11 @@ export interface IUser extends Document {
 
 };
 export interface IFoodPartner extends Document {
-  fullName:string
+  name:string
   email: string;
   password: string;
+  phone:string
+  address:string
   refreshToken:string;
   isPasswordCorrect(password:string): Promise<boolean>
 
@@ -37,4 +39,8 @@ export interface IFood extends Document {
 export type TokenPayload  = {
     _id:string
     role: "USER" | "FOOD_PARTNER"
+}
+
+export interface IBaseAuthDoc extends Document {
+  refreshToken?: string;
 }

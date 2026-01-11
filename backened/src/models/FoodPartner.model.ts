@@ -6,13 +6,21 @@ const FoodPartnerSchema = new Schema<IFoodPartner>(
 
     {
 
-        fullName: {
+        name: {
             type: String,
             required: true,
             unique: true,
             trim: true
 
 
+        },
+        phone: {
+              type: String,
+            required: true,
+        },
+        address: {
+                 type: String,
+            required: true,
         },
 
         email: {
