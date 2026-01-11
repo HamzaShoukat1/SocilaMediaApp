@@ -1,9 +1,6 @@
 import type {JwtPayload} from "jsonwebtoken"
-import mongoose, {  Document } from "mongoose";
+import  {  Document, Types } from "mongoose";
 
-// export type Multerfile = {
-//     picturePath: Express.Multer.File[],
-// }
 
 export interface AccessTokenPayload extends JwtPayload {
     _id:string
@@ -12,32 +9,32 @@ export interface AccessTokenPayload extends JwtPayload {
 
 //users for register
 export interface IUser extends Document {
-    firstName: string;
-  lastName: string;
+  fullName:string
   email: string;
   password: string;
-  picturePath?: string;
-  friends: mongoose.Types.ObjectId[]; // usually user IDs
-  location?: string;
-  occupation?: string;
-  viewedProfile?: number;
-  impressions?: number;
   refreshToken:string;
   isPasswordCorrect(password:string): Promise<boolean>
-  generateAccessToken():string
-  generateRefreshToken():string
+
+
+};
+export interface IFoodPartner extends Document {
+  fullName:string
+  email: string;
+  password: string;
+  refreshToken:string;
+  isPasswordCorrect(password:string): Promise<boolean>
+
+
+};
+export interface IFood extends Document {
+  name:string,
+  description:string,
+  video:string,
+  foodPartner:Types.ObjectId
 
 }
-export interface IPOST extends Document {
-  userId:string
-    firstName: string;
-  lastName: string;
-  picturePath?: string
-  userPicturePath:string,
-  description:string
-  location?: string;
-  likes: Map<string,boolean>
-  comments?:Array<[]>
 
-
+export type TokenPayload  = {
+    _id:string
+    role: "USER" | "FOOD_PARTNER"
 }

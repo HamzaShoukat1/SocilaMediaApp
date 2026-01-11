@@ -2,10 +2,9 @@ import express from "express"
 import cors from "cors"
 import cookieParser from "cookie-parser"
 import path from "path"
-import authRouter  from "./routes/Auth.route.js"
-import UsersRouter from "./routes/Users.route.js"
-import PostRouter from "./routes/Post.router.js"
-
+import authRouter from "./routes/Auth.route.js"
+import PartnerRouter from "./routes/Partner.router.js"
+import FoodRouter from "./routes/Food.route.js"
 
 const app = express()
 
@@ -16,7 +15,7 @@ app.use(cors({
 // const __filename = fileURLToPath(import.meta.url)
 // const __dirname = path.dirname(__filename)
 
-app.use("/assets",express.static(path.join(process.cwd(),"public/assets")))
+app.use("/assets", express.static(path.join(process.cwd(), "public/assets")))
 
 
 app.use(express.json())
@@ -26,8 +25,16 @@ app.use(cookieParser())
 
 
 //routes
-app.use("/api/v1/users",authRouter)
-app.use("/users",UsersRouter)
-app.use("/posts",PostRouter)
+//auth toutes
+app.use("/api/v1/users", authRouter)
 
-export {app}
+//partner routes 
+app.use("/api/v1/partner", PartnerRouter)
+
+//food route
+app.use("/api/v1/food",FoodRouter)
+
+
+
+
+export { app }
