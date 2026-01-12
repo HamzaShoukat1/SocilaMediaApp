@@ -37,7 +37,7 @@ const createFood = asynchandler(async (req, res) => {
             name:req.body.name,
             description:req.body.description,
             video:fileUploadResult,
-            foodPartner:req.user?._id ?? '',
+            foodPartner:req.user?._id
 
 
         })

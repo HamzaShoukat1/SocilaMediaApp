@@ -4,23 +4,24 @@ import { Apiresponse } from "../utils/Apiresponse.js";
 import { User } from "../models/User.model.js";
 import jwt from "jsonwebtoken"
 import { FoodPartner } from "../models/FoodPartner.model.js";
-import { generateAccessToken,generateRefreshToken } from "../services/Token.services.js";
-import {type  IBaseAuthDoc } from "../Types/types.js";
-import { type Model } from "mongoose";
-const generateAcessandRefreshTokens = async (userId: string,role: "USER" | "FOOD_PARTNER") => {
-    const Model:Model<IBaseAuthDoc> = role === "USER" ? User : FoodPartner
+import { FoodModel } from "../models/Food.model.js";
+import { generateAccessToken, generateRefreshToken } from "../services/Token.services.js";
+import { type IBaseAuthDoc } from "../Types/types.js";
+import mongoose, { type Model } from "mongoose";
+const generateAcessandRefreshTokens = async (userId: string, role: "USER" | "FOOD_PARTNER") => {
+    const Model: Model<IBaseAuthDoc> = role === "USER" ? User : FoodPartner
     try {
         const user = await Model.findById(userId)
         if (!user) {
             throw new Apierror(404, "User not found");
         }
         const accessToken = generateAccessToken({
-            _id:user._id.toString(),
+            _id: user._id.toString(),
             role
         })
         const refreshToken = generateRefreshToken({
-                _id: user._id.toString(),
-                role
+            _id: user._id.toString(),
+            role
         })
 
         user.refreshToken = refreshToken
@@ -130,7 +131,7 @@ const loginUser = asynchandler(async (req, res) => {
         throw new Apierror(401, "Invalid user credentials")
 
     };
-    const { accessToken, refreshToken } = await generateAcessandRefreshTokens(user._id.toString(),"USER")
+    const { accessToken, refreshToken } = await generateAcessandRefreshTokens(user._id.toString(), "USER")
 
     const logedInUser = await User.findById(user._id).select("-password -refreshToken")
 
@@ -190,9 +191,9 @@ const registerFoodPartner = asynchandler(async (req, res) => {
     //remove password and refreshtoken from res
     //check for user creation
     //return res 
-    const { email, name,phone,address, password } = req.body
+    const { email, name, phone, address, password } = req.body
     if (
-        [name, email,phone,address, password].some((fields) => fields?.trim() === "")
+        [name, email, phone, address, password].some((fields) => fields?.trim() === "")
     ) {
         throw new Apierror(400, "all fields are required")
 
@@ -205,7 +206,7 @@ const registerFoodPartner = asynchandler(async (req, res) => {
         throw new Apierror(400, "Food Partner with email or username already existed")
 
     };
-  
+
     //createUser obj entry in db
     const user = await FoodPartner.create({
         name,
@@ -256,7 +257,7 @@ const loginFoodPartner = asynchandler(async (req, res) => {
         throw new Apierror(401, "Invalid Food Partner credentials")
 
     };
-    const { accessToken, refreshToken } = await generateAcessandRefreshTokens(user._id.toString(),"FOOD_PARTNER")
+    const { accessToken, refreshToken } = await generateAcessandRefreshTokens(user._id.toString(), "FOOD_PARTNER")
 
     const logedInUser = await FoodPartner.findById(user._id).select("-password -refreshToken")
 
@@ -282,6 +283,30 @@ const loginFoodPartner = asynchandler(async (req, res) => {
 
 
 });
+const logoutFoodPartner = asynchandler(async (req, res) => {
+    await FoodPartner.findByIdAndUpdate(
+        req.user?._id,
+        {
+            $set: {
+                refreshToken: undefined
+            }
+        },
+        {
+            new: true
+        }
+    )
+    const options = {
+        httpOnly: true,
+        secure: true
+    }
+    return res.status(200)
+        .clearCookie("accessToken", options)
+        .clearCookie("refreshToken", options)
+        .json(new Apiresponse(200, {}, "Food Partner logged out successfully"
+        ))
+
+
+});
 
 const refreshAccessTokens = asynchandler(async (req, res) => {
     //acccess tokens
@@ -296,9 +321,9 @@ const refreshAccessTokens = asynchandler(async (req, res) => {
         const decodedToken = jwt.verify(
             incomingRefreshTokenfromdb,
             process.env.REFRESH_TOKEN_SECRET || ''
-        ) as {_id:string; role:"USER" | "FOOD_PARTNER"}
+        ) as { _id: string; role: "USER" | "FOOD_PARTNER" }
         //find user who have token
-        const Model:Model<IBaseAuthDoc> = decodedToken.role === "USER" ? User : FoodPartner
+        const Model: Model<IBaseAuthDoc> = decodedToken.role === "USER" ? User : FoodPartner
         const user = await Model.findById(decodedToken?._id)
 
         if (!user) {
@@ -315,7 +340,7 @@ const refreshAccessTokens = asynchandler(async (req, res) => {
         }
 
         //generate new tokens
-        const { accessToken, refreshToken }: any = await generateAcessandRefreshTokens(user._id.toString(),decodedToken.role)
+        const { accessToken, refreshToken }: any = await generateAcessandRefreshTokens(user._id.toString(), decodedToken.role)
         return res.status(200)
             .cookie("accessToken", accessToken, options)
             .cookie("refreshToken", refreshToken, options)
@@ -339,30 +364,39 @@ const refreshAccessTokens = asynchandler(async (req, res) => {
 
 
 });
-const logoutFoodPartner = asynchandler(async (req, res) => {
-    await FoodPartner.findByIdAndUpdate(
-        req.user?._id,
-        {
-            $set: {
-                refreshToken: undefined
-            }
-        },
-        {
-            new: true
-        }
+
+const getFoodPartberByid = asynchandler(async (req, res) => {
+
+    const {id} = req.params
+
+
+      if (!id) {
+    throw new Apierror(400, "Food partner id is required")
+  }
+  if (!mongoose.Types.ObjectId.isValid(id)) {
+    throw new Apierror(400, "Invalid Food Partner ID");
+}
+//  // 1️Check food partner exists
+    const foodPartner = await FoodPartner.findById(id)
+
+
+      if (!foodPartner) {
+    throw new Apierror(404, "Food partner not found")
+  }
+//Get all food items of this partner
+    const foodItembyFoodPartner = await FoodModel.find({foodPartner: foodPartner._id})
+
+
+    return res.status(200).json(
+        new Apiresponse(200, {foodPartner,foodItembyFoodPartner}, "Food partner and items retrieved successfully")
+
     )
-    const options = {
-        httpOnly: true,
-        secure: true
-    }
-    return res.status(200)
-        .clearCookie("accessToken", options)
-        .clearCookie("refreshToken", options)
-        .json(new Apiresponse(200, {}, "Food Partner logged out successfully"
-))
 
 
-});
+
+
+
+})
 
 export {
     registerUser,
@@ -372,4 +406,5 @@ export {
     loginFoodPartner,
     refreshAccessTokens,
     logoutFoodPartner,
+    getFoodPartberByid
 }
